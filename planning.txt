@@ -1,7 +1,7 @@
-14/12 : validation de la compréhension du sujet + étape 1 (truc sécurisé cohérent)
-04/01 : étape 1 fonctionnelle/à valider + étape 2 (truc des transactions)
-11/01 : validation étape 2 + étape 3 (stub) + étape 4 (références d'objets dans les objets)
-18/01 : validation étapes 3 et 4 + problèmes restants + plan test
+- 14/12 : validation de la compréhension du sujet + étape 1 (truc sécurisé cohérent)
+- 04/01 : étape 1 fonctionnelle/à valider + étape 2 (truc des transactions)
+- 11/01 : validation étape 2 + étape 3 (stub) + étape 4 (références d'objets dans les objets)
+- 18/01 : validation étapes 3 et 4 + problèmes restants + plan test
 
 
 
