@@ -3,5 +3,5 @@
 - 11/01 : validation étape 2 + étape 3 (stub) + étape 4 (références d'objets dans les objets)
 - 18/01 : validation étapes 3 et 4 + problèmes restants + plan test
 
-
+-------------------------------------------------------------------------------
 
