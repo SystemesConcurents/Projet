@@ -2,6 +2,15 @@ import java.io.*;
 
 public class SharedObject implements Serializable, SharedObject_itf {
 	
+	public int id ;
+	public Object o ;
+	public int lock ; 
+
+
+	public SharedObject(int id) {
+		this.id=id ;
+	}
+		
 	// invoked by the user program on the client node
 	public void lock_read() {
 	}
