@@ -20,6 +20,7 @@ public class Client extends UnicastRemoteObject implements Client_itf {
 	
 	// lookup in the name server
 	public static SharedObject lookup(String name) {
+        Object o = (Object) Naming.lookup(name) ; 
 	}		
 	
 	// binding in the name server
@@ -28,6 +29,7 @@ public class Client extends UnicastRemoteObject implements Client_itf {
 
 	// creation of a shared object
 	public static SharedObject create(Object o) {
+		
 	}
 	
 /////////////////////////////////////////////////////////////
