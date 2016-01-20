@@ -31,11 +31,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	
 	// invoked by the user program on the client node
 	public synchronized void lock_read() {		
-		try {
-			this.wait();
-		}
-		catch (InterruptedException e) {
-		}
+		assert(this.lock!=4) ; 
 		switch (lock) {
             case 0:  
 					 this.o = Client.lock_read(this.id) ;
@@ -45,6 +41,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
                      break;
             case 2:  this.lock = 5;
                      break;
+                     
         }
      
 	
@@ -68,15 +65,17 @@ public class SharedObject implements Serializable, SharedObject_itf {
 
 	// invoked by the user program on the client node
 	public synchronized void unlock() {		
-		if (this.lock == 5 || this.lock == 4) {
-			this.lock = 2 ;
-		}
-		else if (this.lock == 3) {
-			this.lock = 1 ;
+		assert(this.lock!=2);
+		switch(this.lock) {
+			case 3 : this.lock=1;
+					 break ;
+			case 4 : this.lock=2;
+					 break ; 
+			default :  
 		}
 		//on notifie que le verrou a été libéré
 		try {
-			this.notify() ; 
+			notify() ; 
 		}
 		catch (Exception e) {
 		}
@@ -107,12 +106,14 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	}
 
 	public synchronized Object invalidate_writer() {
-		while (this.lock==4 || this.lock==5 || this.lock==3) {
-			wait();
+		assert(this.lock!=3) ; 
+		switch(this.lock) {
+			case 4 : wait() ;
+			case 2 : this.lock=0 ;
+					 break ;
+		    default : 
 		}
-		
-		this.lock=0;
-		return this.o ; 
+					 
 		
 	
 	}
