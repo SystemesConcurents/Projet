@@ -4,7 +4,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class SharedObject implements Serializable, SharedObject_itf {
 	
 	private int id ;
-	private Object o ;
+	private Object obj ;
 	private int lock ;
 	//NL, no lock 0
 	//RLC, read lock cached  1
@@ -13,11 +13,29 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	//WLT, write lock taken 4
 	//RLT_WLC  read lock taken and write lock cached 5
 
+	public SharedObject() {
+		this.id=0;
+		this.obj=null;
+		this.lock=0; 
+	}
 	
+	public Object getObj() {
+		return obj;
+	}
+
+	public void setObj(Object obj) {
+		this.obj = obj;
+	}
+	
+	
+	public void setId(int id) {
+		this.id=id;
+	}
+
 	public SharedObject(int id) {
 		this.id = id ;
 		this.lock=0 ; 
-		this.o = null ; 
+		this.setObj(null) ; 
 	}
 	
 	public int getId() { 
@@ -25,7 +43,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	}
 	
 	public Object getObject() { 
-		return this.o; 
+		return this.getObj(); 
 	}
 		
 	
@@ -34,7 +52,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 		assert(this.lock!=4) ; 
 		switch (lock) {
             case 0:  
-					 this.o = Client.lock_read(this.id) ;
+					 this.setObj(Client.lock_read(this.id)) ;
 					 this.lock = 3 ;				
                      break;
             case 1:  this.lock = 3 ;
@@ -57,7 +75,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	    }
 		if (this.lock ==0 || this.lock == 1 || this.lock == 3) {
 			obj = Client.lock_write(this.id);
-			this.o = obj ; 
+			this.setObj(obj) ; 
 		}		
 		this.lock = 4  ; //write lock taken 		
 
@@ -85,7 +103,12 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	// callback invoked remotely by the server
 	public synchronized Object reduce_lock() {
 		while (this.lock!=5 && this.lock!=2 && this.lock!=4) {
-			wait();
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		if (this.lock==4 || this.lock==2) {
 			this.lock=1;
@@ -93,14 +116,19 @@ public class SharedObject implements Serializable, SharedObject_itf {
 		else if (this.lock==5) {
 			this.lock=3;
 		}
-		return this.o ; 
+		return this.getObj() ; 
 	}
 
 	// callback invoked remotely by the server
 	public synchronized void invalidate_reader() {
 		while (this.lock==3 || this.lock==1) {
 
-			wait();
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		this.lock=0; 
 	}
@@ -108,11 +136,17 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	public synchronized Object invalidate_writer() {
 		assert(this.lock!=3) ; 
 		switch(this.lock) {
-			case 4 : wait() ;
+			case 4 : try {
+				wait() ;
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			case 2 : this.lock=0 ;
 					 break ;
 		    default : 
 		}
+		return this.getObj() ; 
 					 
 		
 	
