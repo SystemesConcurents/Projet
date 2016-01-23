@@ -2,9 +2,9 @@ import java.io.*;
 import java.util.* ;
 import java.util.concurrent.locks.ReentrantLock;
 public class SharedObject implements Serializable, SharedObject_itf {
-	
+
 	private int id ;
-	private Object obj ;
+	Object obj ;
 	private int lock ;
 	//NL, no lock 0
 	//RLC, read lock cached  1
@@ -18,7 +18,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 		this.obj=null;
 		this.lock=0; 
 	}
-	
+
 	public Object getObj() {
 		return obj;
 	}
@@ -26,8 +26,8 @@ public class SharedObject implements Serializable, SharedObject_itf {
 	public void setObj(Object obj) {
 		this.obj = obj;
 	}
-	
-	
+
+
 	public void setId(int id) {
 		this.id=id;
 	}
@@ -37,118 +37,156 @@ public class SharedObject implements Serializable, SharedObject_itf {
 		this.lock=0 ; 
 		this.setObj(null) ; 
 	}
-	
+
 	public int getId() { 
 		return this.id;
 	}
-	
+
 	public Object getObject() { 
 		return this.getObj(); 
 	}
-		
-	
+
+
 	// invoked by the user program on the client node
 	public synchronized void lock_read() {		
 		assert(this.lock!=4) ; 
 		switch (lock) {
-            case 0:  
-					 this.setObj(Client.lock_read(this.id)) ;
-					 this.lock = 3 ;				
-                     break;
-            case 1:  this.lock = 3 ;
-                     break;
-            case 2:  this.lock = 5;
-                     break;
-                     
-        }
-     
-	
+		case 0:  
+			this.obj=Client.lock_read(this.id);
+			this.lock=3;  			
+			break;
+		case 1:       this.lock=3;
+		break;
+		case 2:       this.lock = 5;
+		return;
+		case 3 :
+		case 4 :      break ; 
+
+
+		}
+		this.lock=3; 
+		System.out.println(lock) ;
+
+
 	}
 
 	// invoked by the user program on the client node
 	public synchronized void lock_write() {
-		Object obj ;
-		try {
-			this.wait();
+		switch(lock) {
+		case 0 : this.obj = Client.lock_write(this.id);
+		this.lock=4;
+		break;
+		case 1 : this.lock=4;
+		break;
+		case 2 : this.lock=4;
+		case 3 :
+		case 4 :
+		case 5 : this.lock=4; 
+		break; 
 		}
-		catch (InterruptedException e) {
-	    }
-		if (this.lock ==0 || this.lock == 1 || this.lock == 3) {
-			obj = Client.lock_write(this.id);
-			this.setObj(obj) ; 
-		}		
-		this.lock = 4  ; //write lock taken 		
+		System.out.println(lock) ;
+
 
 	}
 
 	// invoked by the user program on the client node
 	public synchronized void unlock() {		
-		assert(this.lock!=2);
 		switch(this.lock) {
-			case 3 : this.lock=1;
-					 break ;
-			case 4 : this.lock=2;
-					 break ; 
-			default :  
+		case 3 : this.lock=1;
+		notify(); 
+		break ;
+		case 5 : this.lock=2;
+		notify();
+		break;  
+
+		case 4 : this.lock=2;
+		notify();
+		break ; 
+		case 0 :
+		case 1 : 
+		case 2 :  
+
 		}
-		//on notifie que le verrou a été libéré
-		try {
-			notify() ; 
-		}
-		catch (Exception e) {
-		}
+		System.out.println("j'ai unlocké oklm"); 
+		System.out.println(lock) ;
+
 	}
 
 
 	// callback invoked remotely by the server
 	public synchronized Object reduce_lock() {
-		while (this.lock!=5 && this.lock!=2 && this.lock!=4) {
+		switch(lock) {
+		case 2 : this.lock=1;
+		break ;
+		case 3 : break; 
+		case 5 : this.lock=3;
+		break;
+		case 4 : //on attend la fin de l'écriture
 			try {
 				wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+			}
+			catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			if (lock==2) this.lock=1;
+			break;
+		case 1 :
+		case 0 : 
 		}
-		if (this.lock==4 || this.lock==2) {
-			this.lock=1;
-		}
-		else if (this.lock==5) {
-			this.lock=3;
-		}
-		return this.getObj() ; 
+		return this.obj; 	
+
 	}
 
 	// callback invoked remotely by the server
 	public synchronized void invalidate_reader() {
-		while (this.lock==3 || this.lock==1) {
-
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		assert(this.lock!=3);
+		switch(lock) {
+		case 1 : this.lock=0;
+		break; 
+		case 2 : 
+		case 3 : try {
+			wait();
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		this.lock=0; 
+		case 4 : break; 
+		case 5 : try {
+			wait();
+		}
+		catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		this.lock=0;
+		break;
+		case 0 : 
+		}
+		this.obj=null; 	
+		System.out.println(lock) ;
+
 	}
 
 	public synchronized Object invalidate_writer() {
 		assert(this.lock!=3) ; 
 		switch(this.lock) {
-			case 4 : try {
-				wait() ;
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			case 2 : this.lock=0 ;
-					 break ;
-		    default : 
+		case 5 : 
+		case 4 : try {
+			wait() ;
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		return this.getObj() ; 
-					 
-		
-	
+		this.lock=0; 
+		case 2 : this.lock=0 ;
+		break ;
+		case 0 :
+		case 1 : 
+		case 3 : break;  
+		}	System.out.println(lock) ;
+
+		return this.getObj() ; 	
+
+
 	}
 }
