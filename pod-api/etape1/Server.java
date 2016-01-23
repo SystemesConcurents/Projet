@@ -31,6 +31,7 @@ public class Server extends UnicastRemoteObject implements Server_itf {
 
         System.out.println("Déclaration des objets partagés dans le registre");
         Server server = new Server();
+        Naming.rebind("//localhost:1337/Server", server);
     }
 
     public synchronized int lookup(String name) throws java.rmi.RemoteException {
