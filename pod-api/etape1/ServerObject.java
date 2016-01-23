@@ -1,4 +1,4 @@
-import jaa.rmi.*;
+import java.rmi.*;
 import java.util.*;
 
 public class ServerObject {
@@ -15,7 +15,7 @@ public class ServerObject {
     private Object object;
 
     public ServerObject(int id, Object object) {
-        
+
         this.id = id;
         this.state = State.NL;
         this.lockingClients = new LinkedList<Client_itf>();
@@ -23,29 +23,29 @@ public class ServerObject {
     }
 
     public int getId() {
-        
+
         return id;
     }
 
     public Object getObject() {
-        
+
         return this.object;
     }
 
     public synchronized void lock_read(Client_itf client) {
-        
+
         assert(client != null);
 
         if(state == State.WLT) {
-            
+
             assert(lockingClients.size() == 1);
-            
+
             try {
                 if(!lockingClients.getFirst().equals(client))
                     this.object = lockingClients.getFirst().reduce_lock(id);
             }
             catch(RemoteException e) {
-                
+
                 throw new RuntimeException(e);
             }
         }
@@ -57,27 +57,30 @@ public class ServerObject {
     }
 
     public synchronized void lock_write(Client_itf client) {
-        
+
         assert(client != null);
 
         if(state == State.WLT) {
-            
+
             assert(lockingClients.size() == 1);
 
             try {
                 if(!lockingClients.getFirst().equals(client))
                     this.object = lockingClients.getFirst().invalidate_writer(id);
             }
+            catch(RemoteException e) {
+                throw new RuntimeException(e);
+            }
 
             lockingClients.clear();
         }
         else if(state == State.RLT) {
-            
+
             for(Client_itf readingClient : lockingClients) {
-                
+
                 try {
                     if(!readingClient.equals(client))
-                        c.invalidate_reader(id);
+                        client.invalidate_reader(id);
                 }
                 catch(RemoteException e) {
 
@@ -87,7 +90,7 @@ public class ServerObject {
 
             lockingClients.clear();
         }
-        
+
         state = State.WLT;
 
         lockingClients.add(client);
