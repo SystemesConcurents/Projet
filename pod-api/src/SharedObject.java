@@ -16,6 +16,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
 
     private int id;
     public Object obj;
+    private Object cpy;
     private State state;
     private ReentrantLock mutex;
     private Condition endLock;
@@ -55,6 +56,40 @@ public class SharedObject implements Serializable, SharedObject_itf {
         this.id = id;
     }
 
+    private static Object clone(Object i) {
+        Object o = null;
+        
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try{
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(i);
+            oos.flush();
+            oos.close();
+            bos.close();
+            byte[] byteData = bos.toByteArray();
+
+            ByteArrayInputStream bais = new ByteArrayInputStream(byteData);
+
+            o = (Object)(new ObjectInputStream(bais).readObject());
+        }
+        catch(ClassNotFoundException e) {
+            throw new RuntimeException("ClassNotFoundException in SharedObject.saveCopy().");
+        }
+        catch(IOException e) {
+            throw new RuntimeException("IOException in SharedObject.saveCopy().");
+        }
+
+        return o;
+    }
+    
+    public void saveCopy() {
+        cpy = SharedObject.clone(obj);        
+    }
+
+    public void restoreCopy() {
+        obj = SharedObject.clone(obj);
+    }
+
     // Invoked by the user program
     public void lock_read() {
         //System.out.print("> SharedObject.lock_read() ");
@@ -76,7 +111,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 state = State.RLT_WLC;
                 break;
             default:
-                throw new RuntimeException("Invalid lock_read");
+                System.out.println("ILR : ça sert à rien tu l'as déjà !");
         }
 
         //System.out.print("< SharedObject.lock_read() ");
@@ -84,7 +119,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
         endLock.signal();
         mutex.unlock();
     }
-
+    
     // Invoked by the user program
     public void lock_write() {
         //System.out.print("> SharedObject.lock_write() ");
@@ -97,7 +132,6 @@ public class SharedObject implements Serializable, SharedObject_itf {
         switch(state) {
             case NL:
             case RLC:
-                System.out.println("# essayons de prendre le vérou en écriture...");
                 // Rendre le mutex au cas où on est bloqué par un autre client
                 // demandant une écriture et qu'il faudrait nous invalider la
                 // lecture
@@ -110,18 +144,23 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 state = State.WLT;
                 break;
             default:
-                throw new RuntimeException("Invalid lock_write");
+                System.out.println("ILW : ça sert à rien tu l'as déjà !");
         }
 
         Transaction t = Transaction.getCurrentTransaction();
         if(t != null && t.isActive()) {
             t.addRelatedObject(this);
+            saveCopy();
         }
 
         //System.out.print("< SharedObject.lock_write() ");
         //System.out.println(state);
         endLock.signal();
         mutex.unlock();
+    }
+
+    public boolean canUnlock() {
+        return state == State.RLT_WLC || state == State.WLT || state == State.RLT;
     }
 
     // Invoked by the user program
@@ -142,7 +181,7 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 state = State.RLC;
                 break;
             default:
-                throw new RuntimeException("Invalid unlock");
+                System.out.println("IUL : arrête, tu l'as déjà plus !");
         }
 
         //System.out.print("< SharedObject.unlock() ");
@@ -154,11 +193,11 @@ public class SharedObject implements Serializable, SharedObject_itf {
 
     // Invoked remotely by the server
     public Object reduce_lock() {
-        System.out.print("> SharedObject.reduce_lock() ");
-        System.out.println(state);
+        //System.out.print("> SharedObject.reduce_lock() ");
+        //System.out.println(state);
         mutex.lock();
 
-        if(state == State.NL || state == State.RLC || state == State.RLT)
+        while(state == State.NL || state == State.RLC || state == State.RLT)
             endLock.awaitUninterruptibly();
 
         switch(state) {
@@ -175,19 +214,19 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 throw new RuntimeException("Invalid reduce_lock");
         }
 
-        System.out.print("< SharedObject.reduce_lock() ");
-        System.out.println(state);
+        //System.out.print("< SharedObject.reduce_lock() ");
+        //System.out.println(state);
         mutex.unlock();
         return obj;
     }
 
     // Invoked remotely by the server
     public void invalidate_reader() {
-        System.out.print("> SharedObject.invalidate_reader() ");
-        System.out.println(state);
+        //System.out.print("> SharedObject.invalidate_reader() ");
+        //System.out.println(state);
         mutex.lock();
 
-        if(state == State.NL)
+        while(state == State.NL)
             endLock.awaitUninterruptibly();
 
         switch(state) {
@@ -201,18 +240,18 @@ public class SharedObject implements Serializable, SharedObject_itf {
         }
 
         obj = null;
-        System.out.print("< SharedObject.invalidate_reader() ");
-        System.out.println(state);
+        //System.out.print("< SharedObject.invalidate_reader() ");
+        //System.out.println(state);
         mutex.unlock();
     }
 
     // Invoked remotely by the server
     public Object invalidate_writer() {
-        System.out.print("> SharedObject.invalidate_writer() ");
-        System.out.println(state);
+        //System.out.print("> SharedObject.invalidate_writer() ");
+        //System.out.println(state);
         mutex.lock();
 
-        if(state == State.NL || state == State.RLC || state == State.RLT)
+        while(state == State.NL || state == State.RLC || state == State.RLT)
             endLock.awaitUninterruptibly();
 
         switch(state) {
@@ -226,8 +265,8 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 throw new RuntimeException("Invalid invalidate_writer");
         }
 
-        System.out.print("< SharedObject.invalidate_writer() ");
-        System.out.println(state);
+        //System.out.print("< SharedObject.invalidate_writer() ");
+        //System.out.println(state);
         mutex.unlock();
         return obj;
     }

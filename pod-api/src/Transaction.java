@@ -50,16 +50,15 @@ public class Transaction {
     public void abort(){
 
         for(SharedObject o : relatedObjects) {
-            try {
+            if(o.canUnlock()) {
+                System.out.print("-");
+                o.restoreCopy();
                 o.unlock();
-                // Recharger les objets + remplacer les anciens par des nouveaux
-            }
-            catch(RuntimeException e) {
-                System.out.println("RuntimeException in Transaction.abort().");
             }
         }
 
         //System.out.println("---- Transaction aborted ----");
         currentTransaction = null;
+        relatedObjects.clear();
     }
 }

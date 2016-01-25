@@ -146,34 +146,34 @@ public class Client extends UnicastRemoteObject implements Client_itf {
 
     // Receive a lock reduction request from the server
     public synchronized Object reduce_lock(int id) throws java.rmi.RemoteException {
-        System.out.println("> Client.reduce_lock()");
+        //System.out.println("> Client.reduce_lock()");
 
         SharedObject s = sharedObjects.get(id);
 
-        System.out.println("< Client.reduce_lock()");
+        //System.out.println("< Client.reduce_lock()");
         return s.reduce_lock();
     }
 
 
     // Receive a reader invalidation request from the server
     public synchronized void invalidate_reader(int id) throws java.rmi.RemoteException {
-        System.out.println("> Client.invalidate_reader()");
+        //System.out.println("> Client.invalidate_reader()");
 
         SharedObject s = sharedObjects.get(id);
 
         s.invalidate_reader();
-        System.out.println("< Client.invalidate_reader()");
+        //System.out.println("< Client.invalidate_reader()");
     }
 
 
     // Receive a writer invalidation request from the server
     public synchronized Object invalidate_writer(int id) throws java.rmi.RemoteException {
-        System.out.println("> Client.invalidate_writer()");
+        //System.out.println("> Client.invalidate_writer()");
 
         SharedObject s = sharedObjects.get(id);
 
         Object o = s.invalidate_writer();
-        System.out.println("< Client.invalidate_writer()");
+        //System.out.println("< Client.invalidate_writer()");
         return o;
     }
 }

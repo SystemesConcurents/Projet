@@ -76,7 +76,7 @@ public class RandomIrc extends Frame {
             int readOrWrite = rand.nextInt((1 - 0) + 1) + 0;
 
             if(readOrWrite == 0) {
-            reader.read();
+                reader.read();
             }
             else {
                 writer.write(name);
@@ -143,8 +143,17 @@ class Writer {
 
             irc.sentence.lock_write();
             ((Sentence)irc.sentence.obj).write(irc.name + " wrote : " + s);
-            irc.sentence.unlock();
-            ok = t.commit();
+
+            Random rand = new Random();
+            int commitOrAbort = rand.nextInt((4 - 0) + 1) + 0;
+            if(commitOrAbort == 0) {
+                t.abort();
+                ok = false;
+            }
+            else {
+                irc.sentence.unlock();
+                ok = t.commit();
+            }
         }
 
         if(!irc.useTransactions || !ok) {

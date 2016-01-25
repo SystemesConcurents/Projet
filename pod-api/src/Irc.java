@@ -80,36 +80,12 @@ class readListener implements ActionListener {
 
     public void actionPerformed (ActionEvent e) {
         String s = new String();
-        boolean ok = false;
 
-        if(irc.useTransactions) {
+        irc.sentence.lock_read();
 
-            Transaction t = null;
+        s = ((Sentence)(irc.sentence.obj)).read();
 
-            try {
-                t = new Transaction();
-                t.start();
-
-                irc.sentence.lock_read();
-                s = ((Sentence)irc.sentence.obj).read();
-
-                ok = t.commit();
-            }
-            catch(Exception err) {
-
-                t.abort();
-                ok = false;
-            }
-        }
-
-        if(!irc.useTransactions || !ok) {
-
-            irc.sentence.lock_read();
-
-            s = ((Sentence)(irc.sentence.obj)).read();
-
-            irc.sentence.unlock();
-        }
+        irc.sentence.unlock();
 
         irc.text.append(s + "\n");
     }
@@ -122,37 +98,13 @@ class writeListener implements ActionListener {
     }
     public void actionPerformed (ActionEvent e) {
         String s = irc.data.getText();
-        boolean ok = false;
 
-        if(irc.useTransactions) {
+        irc.sentence.lock_write();
 
-            Transaction t = null;
+        ((Sentence)irc.sentence.obj).write(irc.name + " wrote : " + s);
 
-            try {
-                t = new Transaction();
-                t.start();
-
-                irc.sentence.lock_write();
-                ((Sentence)irc.sentence.obj).write(irc.name + " wrote : " + s);
-
-                ok = t.commit();
-            }
-            catch(Exception err) {
-
-                t.abort();
-                ok = false;
-            }
-        }
-
-        if(!irc.useTransactions || !ok) {
-
-            irc.sentence.lock_write();
-
-            ((Sentence)irc.sentence.obj).write(irc.name + " wrote : " + s);
-
-            irc.sentence.unlock();
-        }
-
+        irc.sentence.unlock();
+        
         irc.data.setText("");
     }
 }

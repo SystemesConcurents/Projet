@@ -33,8 +33,8 @@ public class ServerObject {
     }
 
     public synchronized void lock_read(Client_itf client) {
-        System.out.print("> ServerObject.lock_read() ");
-        System.out.println(state);
+        //System.out.print("> ServerObject.lock_read() ");
+        //System.out.println(state);
         assert(client != null);
 
         if(state == State.WLT) {
@@ -43,9 +43,7 @@ public class ServerObject {
 
             try {
                 if(!lockingClients.getFirst().equals(client)) {
-                    System.out.print("# Invalidons le rédacteur... ");
                     this.object = lockingClients.getFirst().reduce_lock(id);
-                    System.out.println("[OK]");
                 }
             }
             catch(RemoteException e) {
@@ -58,13 +56,13 @@ public class ServerObject {
 
         if(!lockingClients.contains(client))
             lockingClients.add(client);
-        System.out.print("< ServerObject.lock_read() ");
-        System.out.println(state);
+        //System.out.print("< ServerObject.lock_read() ");
+        //System.out.println(state);
     }
 
     public synchronized void lock_write(Client_itf client) {
-        System.out.print("> ServerObject.lock_write() ");
-        System.out.println(state);
+        //System.out.print("> ServerObject.lock_write() ");
+        //System.out.println(state);
         assert(client != null);
 
         if(state == State.WLT) {
@@ -73,9 +71,7 @@ public class ServerObject {
 
             try {
                 if(!lockingClients.getFirst().equals(client)) {
-                    System.out.print("# Invalidons le rédacteur... ");
                     this.object = lockingClients.getFirst().invalidate_writer(id);
-                    System.out.println("[OK]");
                 }
             }
             catch(RemoteException e) {
@@ -85,15 +81,11 @@ public class ServerObject {
             lockingClients.clear();
         }
         else if(state == State.RLT) {
-            System.out.print("Aie aie aie !");
-            System.out.println(lockingClients.size());
             for(Client_itf readingClient : lockingClients) {
 
                 try {
                     if(!readingClient.equals(client)) {
-                        System.out.print("# Invalidons ce lecteur... ");
                         readingClient.invalidate_reader(id);
-                        System.out.println("[OK]");
                     }
                 }
                 catch(RemoteException e) {
@@ -108,7 +100,7 @@ public class ServerObject {
         state = State.WLT;
 
         lockingClients.add(client);
-        System.out.print("< ServerObject.lock_write() ");
-        System.out.println(state);
+        //System.out.print("< ServerObject.lock_write() ");
+        //System.out.println(state);
     }
 }
