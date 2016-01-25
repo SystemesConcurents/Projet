@@ -51,7 +51,7 @@ public class Transaction {
 
         for(SharedObject o : relatedObjects) {
             if(o.canUnlock()) {
-                System.out.print("-");
+                //System.out.print("-");
                 o.restoreCopy();
                 o.unlock();
             }

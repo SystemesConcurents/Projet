@@ -206,7 +206,6 @@ public class SharedObject implements Serializable, SharedObject_itf {
                 break;
             case WLT:
                 endUnlock.awaitUninterruptibly();
-                // Case ?
             case WLC:
                 state = State.RLC;
                 break;
